@@ -11,25 +11,34 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.List;
 
 @WebServlet("/hello")
 public class LoginServlet extends HttpServlet {
     private UserService userService= new UserServiceIml();
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String username = req.getParameter("username");
-        String password = req.getParameter("pwd");
-        User login = userService.login(new User(username, password));
-        List<String> list = userService.userAll();
-        if(login != null){
-            HttpSession session = req.getSession();
-            session.setAttribute("loginuser",login);
-            resp.sendRedirect(req.getContextPath()+"/page/main.jsp");
-        }else{
-            req.setAttribute("msg","用户名或密码错误");
-            req.getRequestDispatcher("/page/login.jsp").forward(req,resp);
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp){
+        String method = req.getParameter("method");
+        Class<LoginServlet> loginServletClass = LoginServlet.class;
+        try {
+            LoginServlet ls = loginServletClass.newInstance();
+            Method declaredMethod = loginServletClass.getDeclaredMethod(method, HttpServletRequest.class, HttpServletResponse.class);
+            declaredMethod.invoke(ls,req,resp);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
+
+    }
+    protected void login(HttpServletRequest req,HttpServletResponse resp) throws Exception {
+        String username = req.getParameter("name");
+        String password = req.getParameter("pwd");
+        User login = userService.login(new User(username, password));
+        if(login != null){
+           resp.getWriter().write("ok");
+        }else{
+            resp.getWriter().write("no");
+        }
     }
 }
